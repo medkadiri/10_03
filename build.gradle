@@ -16,59 +16,7 @@ plugins {
     id 'net.bytebuddy.byte-buddy-gradle-plugin' version '1.12.6'
 }
 
-import net.bytebuddy.ByteBuddy;
-import net.bytebuddy.description.type.TypeDescription
-import net.bytebuddy.dynamic.ClassFileLocator
-import net.bytebuddy.dynamic.DynamicType
 
-import java.util.Map;
-
-import java.lang.reflect.Modifier;
-
-import java.util.HashMap;
-
-public interface Trackable {
-    private transient Map<String, Object> trackedFields = new HashMap<>();
-
-    default Map<String, Object> getTrackedFields(){
-        System.out.println("Hello");
-        return trackedFields;
-    }
-}
-
-class ApplicationBootstrap implements net.bytebuddy.build.Plugin {
-
-      @Override
-    boolean matches(TypeDescription target) {
-        return true;
-    }
-
-    @Override
-    DynamicType.Builder<?> apply(DynamicType.Builder<?> builder, TypeDescription typeDescription, ClassFileLocator classFileLocator) {
-        boolean b = typeDescription.getInheritedAnnotations().toString().contains("@io.microhooks.ddd.Source");
-
-        System.out.println("Transforming " + b);
-        if(b){
-            //builder = builder.implement(Trackable.class);
-            builder.implement(Trackable.class).make();//defineField("trackedFields", Map<String, Object>, Modifier.PUBLIC | Modifier.TRANSIENT).value(new HashMap<>());
-            System.out.println("Hello " + typeDescription.getDeclaredFields());
-            return builder;//.implement(Trackable.class).defineField("trackedFields", Map<String, Object>, Modifier.PUBLIC);
-        }
-        else
-            return builder
-    }
-
-    @Override
-    void close() throws IOException {
-
-    }
-}
-
-byteBuddy {
-  transformation {
-    plugin = ApplicationBootstrap.class
-  }
-}
 
 repositories {
     // Use jcenter for resolving dependencies.
@@ -125,5 +73,82 @@ dependencies {
     // Use JUnit test framework
     testImplementation 'junit:junit:4.12'
 
-    
+    // https://mvnrepository.com/artifact/javax.persistence/persistence-api
+    implementation 'javax.persistence:persistence-api:1.0'
+
+
+}
+
+
+import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.description.type.TypeDescription
+import net.bytebuddy.dynamic.ClassFileLocator
+import net.bytebuddy.dynamic.DynamicType
+
+import java.util.Map;
+
+import java.lang.reflect.Modifier;
+
+import java.util.HashMap;
+
+import javax.persistence.*;
+
+class ApplicationBootstrap implements net.bytebuddy.build.Plugin {
+
+    public static class Load extends ClassLoader{
+        public Class findClass(String name, ClassFileLocator classFileLocator) {
+            byte[] b;
+            try {
+                b = classFileLocator.locate(name).resolve();
+                return defineClass(name, b, 0, b.length);
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            return null;
+        }
+    }
+
+    @Override
+    boolean matches(TypeDescription target) {
+        return true;
+    }
+
+    @Override
+    DynamicType.Builder<?> apply(DynamicType.Builder<?> builder, TypeDescription typeDescription, ClassFileLocator classFileLocator) {
+        boolean b = typeDescription.getInheritedAnnotations().toString().contains("@io.microhooks.ddd.Source");
+        Class trackable;
+
+        try{
+            Load l = new Load();
+            trackable = l.findClass("io.microhooks.ddd.Trackable", classFileLocator);//classFileLocator.locate("io.microhooks.ddd.Trackable").getClass();
+            //System.out.println("trackable: " + builder.getClass().getCanonicalName());//trackable.toString());
+        }catch(Exception e){
+            System.out.println("e2: " + e);
+        }
+
+        System.out.println("Transforming " + b);
+        if(b){
+            System.out.println("1");
+            System.out.println(trackable);
+            System.out.println("2");
+            //builder = builder.implement(Trackable.class);
+            builder = builder.implement(trackable);//.make().load(trackable.getClassLoader());//defineField("trackedFields", Map<String, Object>, Modifier.PUBLIC | Modifier.TRANSIENT).value(new HashMap<>());
+            System.out.println("Hello " + typeDescription.getDeclaredFields());
+            return builder;//.implement(Trackable.class).defineField("trackedFields", Map<String, Object>, Modifier.PUBLIC);
+        }
+        else
+            return builder
+    }
+
+    @Override
+    void close() throws IOException {
+
+    }
+}
+
+byteBuddy {
+  transformation {
+    plugin = ApplicationBootstrap.class
+  }
 }
