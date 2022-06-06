@@ -73,8 +73,8 @@ dependencies {
     // Use JUnit test framework
     testImplementation 'junit:junit:4.12'
 
-    // https://mvnrepository.com/artifact/javax.persistence/persistence-api
-    implementation 'javax.persistence:persistence-api:1.0'
+    // // https://mvnrepository.com/artifact/javax.persistence/persistence-api
+    // implementation 'javax.persistence:persistence-api:1.0'
 
 
 }
