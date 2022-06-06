@@ -73,8 +73,9 @@ dependencies {
     // Use JUnit test framework
     testImplementation 'junit:junit:4.12'
 
-    // https://mvnrepository.com/artifact/javax.persistence/persistence-api
-    compileOnly 'javax.persistence:persistence-api:1.0'
+    // // https://mvnrepository.com/artifact/javax.persistence/persistence-api
+    // implementation 'javax.persistence:persistence-api:1.0'
+
 
 }
 
@@ -90,132 +91,64 @@ import java.lang.reflect.Modifier;
 
 import java.util.HashMap;
 
-// here ----------------------------------
+import javax.persistence.*;
 
-//import javax.persistence.EntityListeners;
+class ApplicationBootstrap implements net.bytebuddy.build.Plugin {
 
-import java.lang.annotation.Target;
-import java.lang.annotation.Retention;
-import static java.lang.annotation.ElementType.TYPE;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
-
-import net.bytebuddy.description.annotation.AnnotationDescription;
-
-
-/**
- * Specifies the callback listener classes to be used for an 
- * entity or mapped superclass. This annotation may be applied 
- * to an entity class or mapped superclass.
- *
- * @since Java Persistence 1.0
- */
-// @Target([TYPE]) 
-// @Retention(RUNTIME)
-
-// public @interface EntityListeners {
-
-//     /** The callback listener classes */
-//     Class[] value();
-// }
-
-
-// here ----------------------------------
-// class ApplicationBootstrap implements net.bytebuddy.build.Plugin {
-
-//     public static class Load extends ClassLoader{
-//         public Class findClass(String name, ClassFileLocator classFileLocator) {
-//             byte[] b;
-//             try {
-//                 b = classFileLocator.locate(name).resolve();
-//                 return defineClass(name, b, 0, b.length);
-//             } catch (IOException e) {
-//                 // TODO Auto-generated catch block
-//                 e.printStackTrace();
-//             }
-//             return null;
-//         }
-//     }
-
-//     @Override
-//     boolean matches(TypeDescription target) {
-//         return true;
-//     }
-
-//     @Override
-//     DynamicType.Builder<?> apply(DynamicType.Builder<?> builder, TypeDescription typeDescription, ClassFileLocator classFileLocator) {
-//         boolean b = typeDescription.getInheritedAnnotations().toString().contains("@io.microhooks.ddd.Source");
-//         Class trackable, sourceListener, customListener;
-
-//         try{
-//             Load l = new Load();
-//             trackable = l.findClass("io.microhooks.ddd.Trackable", classFileLocator);//classFileLocator.locate("io.microhooks.ddd.Trackable").getClass();
-//             sourceListener = l.findClass("io.microhooks.ddd.internal.SourceListener", classFileLocator);
-//             customListener = l.findClass("io.microhooks.ddd.internal.CustomListener", classFileLocator);
-//             //System.out.println("trackable: " + builder.getClass().getCanonicalName());//trackable.toString());
-//         }catch(Exception e){
-//             System.out.println("e2: " + e);
-//         }
-
-//         System.out.println("Transforming " + b);
-//         if(b){
-//             System.out.println("1");
-//             System.out.println(trackable);
-//             System.out.println("2");
-//             //builder = builder.implement(Trackable.class);
-//             builder = builder.implement(trackable).annotateType(AnnotationDescription.Builder.ofType(EntityListeners.class)
-//                             .defineTypeArray("value", sourceListener,
-//                                     customListener).build());//.make().load(trackable.getClassLoader());//defineField("trackedFields", Map<String, Object>, Modifier.PUBLIC | Modifier.TRANSIENT).value(new HashMap<>());
-//             System.out.println("Hello " + typeDescription.getDeclaredFields());
-//             return builder;//.implement(Trackable.class).defineField("trackedFields", Map<String, Object>, Modifier.PUBLIC);
-//         }
-//         else
-//             return builder
-//     }
-
-//     @Override
-//     void close() throws IOException {
-
-//     }
-// }
-
-public class _ClassFileLocator implements ClassFileLocator{
-    @Override
-    public Resolution locate(String className) throws IOException {
-        assert className != null;
-        if ( className.equals( this.className ) ) {
-            return resolution;
-        }
-        else {
-            return super.locate( className );
+    public static class Load extends ClassLoader{
+        public Class findClass(String name, ClassFileLocator classFileLocator) {
+            byte[] b;
+            try {
+                b = classFileLocator.locate(name).resolve();
+                return defineClass(name, b, 0, b.length);
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            return null;
         }
     }
-    
+
+    @Override
+    boolean matches(TypeDescription target) {
+        return true;
+    }
+
+    @Override
+    DynamicType.Builder<?> apply(DynamicType.Builder<?> builder, TypeDescription typeDescription, ClassFileLocator classFileLocator) {
+        boolean b = typeDescription.getInheritedAnnotations().toString().contains("@io.microhooks.ddd.Source");
+        Class trackable;
+
+        try{
+            Load l = new Load();
+            trackable = l.findClass("io.microhooks.ddd.Trackable", classFileLocator);//classFileLocator.locate("io.microhooks.ddd.Trackable").getClass();
+            //System.out.println("trackable: " + builder.getClass().getCanonicalName());//trackable.toString());
+        }catch(Exception e){
+            System.out.println("e2: " + e);
+        }
+
+        System.out.println("Transforming " + b);
+        if(b){
+            System.out.println("1");
+            System.out.println(trackable);
+            System.out.println("2");
+            //builder = builder.implement(Trackable.class);
+            builder = builder.implement(trackable);//.make().load(trackable.getClassLoader());//defineField("trackedFields", Map<String, Object>, Modifier.PUBLIC | Modifier.TRANSIENT).value(new HashMap<>());
+            System.out.println("Hello " + typeDescription.getDeclaredFields());
+            return builder;//.implement(Trackable.class).defineField("trackedFields", Map<String, Object>, Modifier.PUBLIC);
+        }
+        else
+            return builder
+    }
+
     @Override
     void close() throws IOException {
 
     }
 }
 
-public class Load extends ClassLoader{
-    public Class findClass(String name, _ClassFileLocator classFileLocator) {
-        byte[] b;
-        try {
-            b = classFileLocator.locate(name).resolve();
-            return defineClass(name, b, 0, b.length);
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        return null;
-    }
-}
-
-Load l = new Load();
-Class applicationBootstrap = l.findClass("io.microhooks.ApplicationBootstrap");
-
 byteBuddy {
   transformation {
-    _ClassFileLocator classFileLocator = new _ClassFileLocator();
-    plugin = applicationBootstrap
+    plugin = ApplicationBootstrap.class
   }
 }
