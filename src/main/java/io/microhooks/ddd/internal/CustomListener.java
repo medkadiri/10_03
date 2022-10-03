@@ -105,7 +105,6 @@ public class CustomListener {
     private void setTrackedFields(Object entity) throws Exception {
         Field[] fields = entity.getClass().getDeclaredFields();
         System.out.println(entity instanceof Trackable);
-        //entity.getClass().
         Trackable trackableEntity = (Trackable)entity;
         Map<String, Object> trackedFields = trackableEntity.getTrackedFields();
         for (Field field : fields) {
