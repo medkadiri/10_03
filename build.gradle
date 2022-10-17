@@ -71,3 +71,7 @@ dependencies {
     // https://mvnrepository.com/artifact/javax.persistence/persistence-api
     implementation 'javax.persistence:persistence-api:1.0'
 }
+
+bootJar {
+    enabled = false
+}
